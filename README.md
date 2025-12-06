@@ -198,7 +198,6 @@ Update the API base URL in `src/constants/Config.ts` to point to your backend:
 ```typescript
 export const API_CONFIG = {
   BASE_URL: 'http://192.168.x.x/backend', // Replace with your local IP for testing
-  // Or for production: 'https://your-domain.com/backend'
   TIMEOUT: 30000,
 };
 ```
