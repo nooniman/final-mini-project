@@ -23,7 +23,7 @@ export const notificationsApi = {
    * Mark a notification as read
    */
   markAsRead: async (id: string): Promise<ApiResponse<null>> => {
-    const response = await apiClient.post<ApiResponse<null>>(
+    const response = await apiClient.put<ApiResponse<null>>(
       API_ENDPOINTS.NOTIFICATIONS.MARK_READ(id)
     );
     return response.data;
@@ -33,7 +33,7 @@ export const notificationsApi = {
    * Mark all notifications as read
    */
   markAllAsRead: async (): Promise<ApiResponse<null>> => {
-    const response = await apiClient.post<ApiResponse<null>>(
+    const response = await apiClient.put<ApiResponse<null>>(
       API_ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ
     );
     return response.data;

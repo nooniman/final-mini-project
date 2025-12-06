@@ -9,18 +9,18 @@ export interface User {
   firstName: string;
   lastName: string;
   middleName?: string;
-  fullName: string;
+  fullName?: string;
   avatar?: string;
-  program: string;
-  programCode: string;
-  department: string;
-  college: string;
-  yearLevel: number;
-  section: string;
-  status: 'active' | 'inactive' | 'graduated' | 'on_leave';
-  enrollmentDate: string;
-  createdAt: string;
-  updatedAt: string;
+  program?: string;
+  programCode?: string;
+  department?: string;
+  college?: string;
+  yearLevel?: number;
+  section?: string;
+  status?: 'active' | 'inactive' | 'graduated' | 'on_leave';
+  enrollmentDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthTokens {

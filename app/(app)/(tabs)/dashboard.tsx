@@ -74,11 +74,15 @@ export default function DashboardScreen() {
       // Calculate GWA from grades
       let totalUnits = 0;
       let weightedSum = 0;
-      const gradesWithValues = grades.filter((g: any) => g.grade !== null && g.grade !== undefined);
+      const gradesWithValues = grades.filter((g: any) => {
+        const finalGrade = g.final_grade || g.grade;
+        return finalGrade !== null && finalGrade !== undefined;
+      });
       
       gradesWithValues.forEach((g: any) => {
-        const units = g.units || 3;
-        const gradeValue = parseFloat(g.grade);
+        const units = parseInt(g.units) || 3;
+        const finalGrade = g.final_grade || g.grade;
+        const gradeValue = parseFloat(finalGrade);
         if (!isNaN(gradeValue)) {
           totalUnits += units;
           weightedSum += gradeValue * units;
@@ -99,12 +103,18 @@ export default function DashboardScreen() {
       ]);
       
       // Format recent grades (show last 3)
-      const formattedGrades = grades.slice(0, 3).map((g: any) => ({
-        subject: g.subject_name || g.name || 'Unknown Subject',
-        code: g.subject_code || g.code || 'N/A',
-        grade: g.grade ? g.grade.toString() : 'In Progress',
-        status: g.grade ? 'viewed' : 'new',
-      }));
+      const formattedGrades = grades.slice(0, 3).map((g: any) => {
+        // Get the final grade value
+        const finalGrade = g.final_grade || g.grade;
+        const gradeValue = finalGrade !== null && finalGrade !== undefined ? parseFloat(finalGrade) : null;
+        
+        return {
+          subject: g.subject_name || g.name || 'Unknown Subject',
+          code: g.subject_code || g.code || 'N/A',
+          grade: gradeValue !== null ? gradeValue.toFixed(2) : 'In Progress',
+          status: gradeValue !== null ? 'viewed' : 'new',
+        };
+      });
       setRecentGrades(formattedGrades);
       
       // Format upcoming classes from subjects with schedule
@@ -112,17 +122,34 @@ export default function DashboardScreen() {
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const todayName = dayNames[today.getDay()];
       
-      const todayClasses = subjects
-        .filter((s: any) => s.schedule && s.schedule.toLowerCase().includes(todayName.toLowerCase().substring(0, 3)))
-        .map((s: any) => ({
-          subject: s.name || s.subject_name,
-          time: s.time || '8:00 AM',
-          room: s.room || 'TBA',
-          type: s.type || 'Lecture',
-        }));
+      const todayClasses: UpcomingClass[] = [];
+      subjects.forEach((s: any) => {
+        if (s.schedules && Array.isArray(s.schedules)) {
+          s.schedules.forEach((schedule: any) => {
+            if (schedule.day && schedule.day.toLowerCase() === todayName.toLowerCase()) {
+              // Format time from 24h to 12h
+              const formatTime = (time: string) => {
+                if (!time) return 'TBA';
+                const [hours, minutes] = time.split(':');
+                const hour = parseInt(hours, 10);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const hour12 = hour % 12 || 12;
+                return `${hour12}:${minutes} ${ampm}`;
+              };
+              
+              todayClasses.push({
+                subject: s.name || s.subject_name || 'Unknown',
+                time: schedule.start_time ? formatTime(schedule.start_time) : 'TBA',
+                room: schedule.room || 'TBA',
+                type: schedule.type || 'Lecture',
+              });
+            }
+          });
+        }
+      });
       
       setUpcomingClasses(todayClasses.length > 0 ? todayClasses : [
-        { subject: 'No classes today', time: '--', room: '--', type: '' }
+        { subject: 'No classes scheduled for today', time: '--', room: '--', type: '' }
       ]);
       
     } catch (error) {

@@ -1,0 +1,27 @@
+# WMSU Grading System API - Apache Configuration
+# Enables clean URLs and routes all requests to index.php
+
+RewriteEngine On
+
+# Handle Authorization Header
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+
+# If the request is not for a real file or directory
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Route everything to index.php
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Prevent directory listing
+Options -Indexes
+
+# Set default charset
+AddDefaultCharset UTF-8
+
+# PHP settings (if allowed)
+<IfModule mod_php.c>
+    php_value display_errors 1
+    php_value error_reporting E_ALL
+</IfModule>

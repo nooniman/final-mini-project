@@ -3,12 +3,14 @@
  * Shows detailed information about a specific subject's grade
  */
 
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { Layout } from '../../../src/constants/Layout';
+import { gradesApi } from '../../../src/services/api';
+import type { GradeDetails } from '../../../src/types/grades';
 import {
   ThemedView,
   ThemedText,
@@ -17,39 +19,63 @@ import {
   Header,
 } from '../../../src/components/ui';
 
-// Mock grade details
-const mockGradeDetails = {
-  id: '1',
-  code: 'CS 201',
-  name: 'Data Structures and Algorithms',
-  units: 3,
-  instructor: 'Dr. Juan Dela Cruz',
-  midtermGrade: 1.25,
-  finalGrade: 1.25,
-  grade: 1.25,
-  remarks: 'Passed',
-  components: [
-    { name: 'Quizzes', score: 92, maxScore: 100, weight: 20 },
-    { name: 'Assignments', score: 88, maxScore: 100, weight: 15 },
-    { name: 'Midterm Exam', score: 85, maxScore: 100, weight: 25 },
-    { name: 'Final Exam', score: 90, maxScore: 100, weight: 30 },
-    { name: 'Class Participation', score: 95, maxScore: 100, weight: 10 },
-  ],
-  classStanding: 5,
-  totalStudents: 42,
-  datePosted: '2024-11-20',
-};
-
 export default function GradeDetailScreen() {
   const { colors } = useTheme();
   const { subjectId } = useLocalSearchParams<{ subjectId: string }>();
+  const [grade, setGrade] = useState<GradeDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const getGradeColor = (grade: number) => {
-    if (grade <= 1.5) return colors.success;
-    if (grade <= 2.0) return colors.info;
-    if (grade <= 2.5) return colors.warning;
+  useEffect(() => {
+    const fetchGradeDetails = async () => {
+      try {
+        setIsLoading(true);
+        const response = await gradesApi.getBySubject(subjectId);
+        if (response.success && response.data) {
+          setGrade(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch grade details:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (subjectId) {
+      fetchGradeDetails();
+    }
+  }, [subjectId]);
+
+  const getGradeColor = (gradeValue: number) => {
+    if (gradeValue <= 1.5) return colors.success;
+    if (gradeValue <= 2.0) return colors.info;
+    if (gradeValue <= 2.5) return colors.warning;
     return colors.error;
   };
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        <Header title="Grade Details" showBack />
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </ThemedView>
+    );
+  }
+
+  if (!grade) {
+    return (
+      <ThemedView style={styles.container}>
+        <Header title="Grade Details" showBack />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+          <Ionicons name="alert-circle-outline" size={64} color={colors.textSecondary} />
+          <ThemedText variant="headline" style={{ color: colors.textSecondary, marginTop: 16 }}>
+            Grade not found
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -68,9 +94,9 @@ export default function GradeDetailScreen() {
         <Card variant="elevated" style={styles.mainCard}>
           <View style={styles.subjectHeader}>
             <View>
-              <ThemedText variant="title2">{mockGradeDetails.name}</ThemedText>
+              <ThemedText variant="title2">{grade.subjectName}</ThemedText>
               <ThemedText variant="subheadline" color="secondary">
-                {mockGradeDetails.code} • {mockGradeDetails.units} units
+                {grade.subjectCode} • {grade.units} units
               </ThemedText>
             </View>
           </View>
@@ -79,114 +105,144 @@ export default function GradeDetailScreen() {
 
           <View style={styles.gradeDisplay}>
             <View style={styles.gradeMain}>
-              <ThemedText variant="caption1" color="secondary">
-                Final Grade
-              </ThemedText>
               <ThemedText
-                style={[styles.gradeValue, { color: getGradeColor(mockGradeDetails.grade) }]}
+                variant="title1"
+                style={[
+                  styles.gradeValue,
+                  { color: getGradeColor(grade.grade) },
+                ]}
               >
-                {mockGradeDetails.grade.toFixed(2)}
+                {grade.grade.toFixed(2)}
               </ThemedText>
-              <Badge label={mockGradeDetails.remarks} variant="success" />
+              <Badge
+                label={grade.remarks}
+                variant={grade.remarks === 'Passed' ? 'success' : 'error'}
+              />
             </View>
           </View>
 
-          <View style={styles.gradeBreakdown}>
-            <View style={styles.gradeItem}>
-              <ThemedText variant="caption1" color="secondary">
-                Midterm
-              </ThemedText>
-              <ThemedText variant="title3">
-                {mockGradeDetails.midtermGrade.toFixed(2)}
-              </ThemedText>
-            </View>
-            <View style={[styles.gradeItemDivider, { backgroundColor: colors.divider }]} />
-            <View style={styles.gradeItem}>
-              <ThemedText variant="caption1" color="secondary">
-                Final
-              </ThemedText>
-              <ThemedText variant="title3">
-                {mockGradeDetails.finalGrade.toFixed(2)}
-              </ThemedText>
-            </View>
-            <View style={[styles.gradeItemDivider, { backgroundColor: colors.divider }]} />
-            <View style={styles.gradeItem}>
-              <ThemedText variant="caption1" color="secondary">
-                Rank
-              </ThemedText>
-              <ThemedText variant="title3">
-                #{mockGradeDetails.classStanding}
-              </ThemedText>
-            </View>
-          </View>
+          {(grade.midtermGrade || grade.finalGrade) && (
+            <>
+              <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+              <View style={styles.gradeBreakdown}>
+                {grade.midtermGrade && (
+                  <View style={styles.gradeItem}>
+                    <ThemedText variant="caption1" color="secondary">
+                      Midterm
+                    </ThemedText>
+                    <ThemedText variant="headline">{grade.midtermGrade.toFixed(2)}</ThemedText>
+                  </View>
+                )}
+                {grade.midtermGrade && grade.finalGrade && (
+                  <View
+                    style={[
+                      styles.gradeItemDivider,
+                      { backgroundColor: colors.divider },
+                    ]}
+                  />
+                )}
+                {grade.finalGrade && (
+                  <View style={styles.gradeItem}>
+                    <ThemedText variant="caption1" color="secondary">
+                      Final
+                    </ThemedText>
+                    <ThemedText variant="headline">{grade.finalGrade.toFixed(2)}</ThemedText>
+                  </View>
+                )}
+              </View>
+            </>
+          )}
         </Card>
 
         {/* Grade Components */}
-        <View style={styles.section}>
-          <ThemedText variant="title3" style={styles.sectionTitle}>
-            Grade Components
-          </ThemedText>
-
-          <Card variant="elevated">
-            {mockGradeDetails.components.map((component, index) => (
-              <View key={index}>
-                <View style={styles.componentRow}>
-                  <View style={styles.componentInfo}>
-                    <ThemedText variant="body">{component.name}</ThemedText>
-                    <ThemedText variant="caption1" color="secondary">
-                      Weight: {component.weight}%
-                    </ThemedText>
+        {grade.components && grade.components.length > 0 && (
+          <View style={styles.section}>
+            <ThemedText variant="title3" style={styles.sectionTitle}>
+              Grade Components
+            </ThemedText>
+            <Card variant="elevated">
+              {grade.components.map((component: any, index: number) => (
+                <View key={index}>
+                  <View style={styles.componentRow}>
+                    <View style={styles.componentInfo}>
+                      <ThemedText variant="headline">{component.name}</ThemedText>
+                      <ThemedText variant="caption1" color="secondary">
+                        {component.weight}% weight
+                      </ThemedText>
+                    </View>
+                    <View style={styles.componentScore}>
+                      <ThemedText variant="headline">
+                        {component.score}/{component.maxScore}
+                      </ThemedText>
+                      <ThemedText variant="caption1" color="secondary">
+                        {component.percentage}%
+                      </ThemedText>
+                    </View>
                   </View>
-                  <View style={styles.componentScore}>
-                    <ThemedText variant="headline">
-                      {component.score}/{component.maxScore}
-                    </ThemedText>
-                    <ThemedText variant="caption1" color="secondary">
-                      {((component.score / component.maxScore) * 100).toFixed(0)}%
-                    </ThemedText>
-                  </View>
+                  {index !== grade.components.length - 1 && (
+                    <View
+                      style={[
+                        styles.componentDivider,
+                        { backgroundColor: colors.divider },
+                      ]}
+                    />
+                  )}
                 </View>
-                {index !== mockGradeDetails.components.length - 1 && (
-                  <View style={[styles.componentDivider, { backgroundColor: colors.divider }]} />
-                )}
-              </View>
-            ))}
-          </Card>
-        </View>
+              ))}
+            </Card>
+          </View>
+        )}
 
-        {/* Instructor Info */}
+        {/* Instructor */}
         <View style={styles.section}>
           <ThemedText variant="title3" style={styles.sectionTitle}>
             Instructor
           </ThemedText>
-
           <Card variant="elevated" padding="md">
             <View style={styles.instructorRow}>
-              <View style={[styles.instructorAvatar, { backgroundColor: colors.primaryMuted }]}>
+              <View
+                style={[
+                  styles.instructorAvatar,
+                  { backgroundColor: colors.primaryMuted },
+                ]}
+              >
                 <Ionicons name="person" size={24} color={colors.primary} />
               </View>
               <View style={styles.instructorInfo}>
-                <ThemedText variant="headline">{mockGradeDetails.instructor}</ThemedText>
+                <ThemedText variant="headline">{grade.instructor}</ThemedText>
                 <ThemedText variant="caption1" color="secondary">
-                  Computer Science Department
+                  Course Instructor
                 </ThemedText>
               </View>
             </View>
           </Card>
         </View>
 
-        {/* Meta Info */}
-        <Card variant="outlined" padding="md" style={styles.metaCard}>
-          <View style={styles.metaRow}>
-            <Ionicons name="calendar-outline" size={16} color={colors.textTertiary} />
-            <ThemedText variant="caption1" color="tertiary">
-              Grade posted on {new Date(mockGradeDetails.datePosted).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </ThemedText>
-          </View>
+        {/* Additional Info */}
+        <Card variant="elevated" style={styles.metaCard} padding="md">
+          {grade.classStanding && (
+            <>
+              <View style={styles.metaRow}>
+                <Ionicons name="trophy-outline" size={18} color={colors.textTertiary} />
+                <ThemedText variant="body" color="secondary">
+                  Class Standing: #{grade.classStanding}
+                </ThemedText>
+              </View>
+              <View style={[styles.divider, { backgroundColor: colors.divider, marginVertical: 8 }]} />
+            </>
+          )}
+          {grade.datePosted && (
+            <View style={styles.metaRow}>
+              <Ionicons name="calendar-outline" size={18} color={colors.textTertiary} />
+              <ThemedText variant="body" color="secondary">
+                Posted on {new Date(grade.datePosted).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </ThemedText>
+            </View>
+          )}
         </Card>
 
         <View style={{ height: Layout.spacing.xl }} />
@@ -229,8 +285,6 @@ const styles = StyleSheet.create({
   },
   gradeBreakdown: {
     flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E0E0E0',
   },
   gradeItem: {
     flex: 1,

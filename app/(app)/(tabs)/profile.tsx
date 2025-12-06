@@ -31,7 +31,7 @@ const menuSections = [
     items: [
       { icon: 'person-outline', label: 'Edit Profile', route: '/(app)/settings' },
       { icon: 'lock-closed-outline', label: 'Change Password', route: '/(app)/settings' },
-      { icon: 'notifications-outline', label: 'Notifications', route: '/(app)/settings' },
+      { icon: 'notifications-outline', label: 'Notifications', route: '/(app)/(tabs)/notifications' },
     ],
   },
   {
@@ -56,6 +56,11 @@ export default function ProfileScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuthStore();
+
+  // Debug: Log user data
+  React.useEffect(() => {
+    console.log('📱 Profile - User data:', JSON.stringify(user, null, 2));
+  }, [user]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -95,9 +100,20 @@ export default function ProfileScreen() {
       >
         {/* Profile Header */}
         <View style={styles.header}>
-          <Avatar name={user?.fullName || 'Student'} size="xl" />
+          <Avatar 
+            name={
+              user?.fullName || 
+              (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : null) ||
+              'Student'
+            } 
+            size="xl" 
+          />
           <ThemedText variant="title2" style={styles.name}>
-            {user?.fullName || 'Student Name'}
+            {
+              user?.fullName || 
+              (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : null) ||
+              'Student Name'
+            }
           </ThemedText>
           <ThemedText variant="subheadline" color="secondary">
             {user?.studentId || 'N/A'}
@@ -119,7 +135,7 @@ export default function ProfileScreen() {
                   Program
                 </ThemedText>
                 <ThemedText variant="subheadline" numberOfLines={1}>
-                  {user?.programCode || user?.program || 'N/A'}
+                  {user?.programCode || user?.program || 'Not Set'}
                 </ThemedText>
               </View>
             </View>
@@ -135,7 +151,7 @@ export default function ProfileScreen() {
                   Year & Section
                 </ThemedText>
                 <ThemedText variant="subheadline">
-                  {user?.yearLevel || '-'}-{user?.section || '-'}
+                  {user?.yearLevel ? `${user.yearLevel}` : '-'}{user?.section ? `-${user.section}` : ''}
                 </ThemedText>
               </View>
             </View>
@@ -150,7 +166,7 @@ export default function ProfileScreen() {
               color={colors.textTertiary}
             />
             <ThemedText variant="footnote" color="tertiary" style={styles.collegeName}>
-              {user?.college || 'Western Mindanao State University'}
+              {user?.college || user?.department || 'Western Mindanao State University'}
             </ThemedText>
           </View>
         </Card>

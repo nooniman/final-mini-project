@@ -92,14 +92,27 @@ export default function GradesScreen() {
       // Format grades
       const formattedGrades: Grade[] = gradesData.map((g: any) => {
         const subject = subjectMap.get(g.subject_id) || subjectMap.get(g.subject_code) || {};
+        
+        // Get final grade or calculate from components
+        const finalGrade = g.final_grade || g.grade;
+        const gradeValue = finalGrade !== null && finalGrade !== undefined ? parseFloat(finalGrade) : null;
+        
+        // Build instructor name from subject or grade data
+        let instructorName = 'TBA';
+        if (subject.instructor_first_name && subject.instructor_last_name) {
+          instructorName = `${subject.instructor_first_name} ${subject.instructor_last_name}`;
+        } else if (g.instructor) {
+          instructorName = g.instructor;
+        }
+        
         return {
           id: g.id?.toString() || Math.random().toString(),
           code: g.subject_code || subject.code || 'N/A',
           name: g.subject_name || subject.name || 'Unknown Subject',
-          units: g.units || subject.units || 3,
-          grade: g.grade !== null && g.grade !== undefined ? parseFloat(g.grade) : null,
-          remarks: g.grade !== null ? 'Passed' : 'In Progress',
-          instructor: g.instructor || subject.instructor || 'TBA',
+          units: parseInt(g.units) || parseInt(subject.units) || 3,
+          grade: gradeValue,
+          remarks: g.remarks || (gradeValue !== null && gradeValue <= 3.0 ? 'Passed' : gradeValue !== null ? 'Failed' : 'In Progress'),
+          instructor: instructorName,
         };
       });
       
@@ -109,9 +122,11 @@ export default function GradesScreen() {
       let totalUnits = 0;
       let weightedSum = 0;
       let unitsEarned = 0;
+      let unitsTaken = 0;
       
       formattedGrades.forEach((g) => {
-        if (g.grade !== null) {
+        unitsTaken += g.units; // Count all units taken
+        if (g.grade !== null && !isNaN(g.grade)) {
           totalUnits += g.units;
           weightedSum += g.grade * g.units;
           if (g.grade <= 3.0) {
@@ -128,7 +143,7 @@ export default function GradesScreen() {
         current: currentGwa,
         cumulative: currentGwa,
         unitsEarned: unitsEarned,
-        unitsTaken: totalUnits,
+        unitsTaken: unitsTaken,
         standing: standing,
       });
       

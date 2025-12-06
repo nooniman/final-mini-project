@@ -33,6 +33,35 @@ A modern React Native Expo application for Western Mindanao State University's s
 
 ```
 grading-system-app/
+├── COPY TO XAMPP/               # Backend PHP API (copy to XAMPP htdocs)
+│   └── backend/                 # PHP REST API files
+│       ├── .htaccess            # Apache rewrite rules
+│       ├── index.php            # API entry point
+│       ├── README.md            # Backend documentation
+│       ├── config/              # Configuration files
+│       │   ├── config.php       # App configuration (JWT secret, etc.)
+│       │   └── database.php     # Database connection settings
+│       ├── database/            # Database files
+│       │   └── schema.sql       # Database schema (import this)
+│       ├── classes/             # Base classes
+│       │   └── BaseController.php
+│       ├── helpers/             # Helper utilities
+│       │   ├── Auth.php         # JWT authentication helper
+│       │   └── Response.php     # JSON response formatter
+│       ├── controllers/         # API controllers
+│       │   ├── AuthController.php
+│       │   ├── GradeController.php
+│       │   ├── SubjectController.php
+│       │   ├── AttendanceController.php
+│       │   ├── NotificationController.php
+│       │   ├── StudentController.php
+│       │   ├── InstructorController.php
+│       │   ├── CourseController.php
+│       │   ├── EnrollmentController.php
+│       │   ├── ScheduleController.php
+│       │   └── SemesterController.php
+│       └── admin/               # Admin panel (optional)
+│
 ├── app/                          # Expo Router screens (file-based routing)
 │   ├── _layout.tsx              # Root layout with providers
 │   ├── index.tsx                # Entry redirect logic
@@ -108,10 +137,9 @@ grading-system-app/
 │
 ├── assets/                      # Static assets
 │   ├── images/
-│   │   ├── icon.png
-│   │   ├── splash-icon.png
-│   │   └── adaptive-icon.png
-│   └── fonts/                   # Custom fonts (if any)
+│       ├── icon.png
+│       ├── splash-icon.png
+│       └── adaptive-icon.png
 │
 ├── app.json                     # Expo configuration
 ├── tsconfig.json               # TypeScript config
@@ -128,6 +156,8 @@ grading-system-app/
 - **npm** or **yarn**
 - **Expo Go** app on your mobile device (for testing)
 - **VS Code** with Expo Tools extension (recommended)
+- **XAMPP** (for backend PHP API)
+- **MySQL/MariaDB** (included with XAMPP)
 
 ### Installation Steps
 
@@ -137,31 +167,178 @@ grading-system-app/
    cd grading-system-app
    ```
 
-2. **Install dependencies**
+2. **Setup Backend API**
+   - Copy the entire `COPY TO XAMPP/backend` folder to your XAMPP `htdocs` directory
+   - The backend should be at: `C:\xampp\htdocs\backend\`
+   - Import `backend/database/schema.sql` into MySQL via phpMyAdmin
+   - Update database credentials in `backend/config/database.php`
+   - Configure JWT secret in `backend/config/config.php`
+   - Start Apache and MySQL in XAMPP Control Panel
+   - Backend will be accessible at `http://localhost/backend`
+
+3. **Install dependencies**
    ```bash
    npm install --legacy-peer-deps
    ```
    > Note: `--legacy-peer-deps` is required due to React 19 peer dependency conflicts
 
-3. **Start the development server**
+4. **Start the development server**
    ```bash
    npx expo start
    ```
 
-4. **Run on your device**
+5. **Run on your device**
    - Scan the QR code with Expo Go (Android) or Camera app (iOS)
    - Or press `a` for Android emulator / `i` for iOS simulator
 
 ### Environment Configuration
 
-Update the API base URL in `src/constants/Config.ts`:
+Update the API base URL in `src/constants/Config.ts` to point to your backend:
 
 ```typescript
 export const API_CONFIG = {
-  baseUrl: 'https://your-api-domain.com/api', // Your PHP backend URL
-  timeout: 30000,
+  BASE_URL: 'http://192.168.x.x/backend', // Replace with your local IP for testing
+  // Or for production: 'https://your-domain.com/backend'
+  TIMEOUT: 30000,
 };
 ```
+
+> **Note**: For testing on a physical device, use your computer's local IP address (e.g., `http://192.168.1.100/backend`) instead of `localhost`.
+
+---
+
+## 🔧 Backend Usage Guide
+
+### Database Setup
+
+1. **Open phpMyAdmin**
+   - Go to `http://localhost/phpmyadmin`
+   - Create a new database named `wmsu_grading`
+
+2. **Import Schema**
+   - Select the `wmsu_grading` database
+   - Click "Import" tab
+   - Choose file: `backend/database/schema.sql`
+   - Click "Go" to import
+
+3. **Configure Database Connection**
+   
+   Edit `backend/config/database.php`:
+   ```php
+   <?php
+   define('DB_HOST', 'localhost');
+   define('DB_NAME', 'wmsu_grading');
+   define('DB_USER', 'root');          // Your MySQL username
+   define('DB_PASS', '');              // Your MySQL password
+   define('DB_CHARSET', 'utf8mb4');
+   ```
+
+4. **Configure JWT Secret**
+   
+   Edit `backend/config/config.php`:
+   ```php
+   <?php
+   define('JWT_SECRET', 'your-secret-key-here');  // Change this!
+   define('ACCESS_TOKEN_EXPIRY', 3600);           // 1 hour
+   define('REFRESH_TOKEN_EXPIRY', 2592000);       // 30 days
+   ```
+
+### Testing the Backend
+
+1. **Test API Endpoint**
+   ```bash
+   # Open browser or use curl
+   curl http://localhost/backend
+   ```
+   
+   Expected response:
+   ```json
+   {
+     "success": true,
+     "message": "WMSU Grading System API",
+     "version": "1.0.0"
+   }
+   ```
+
+2. **Test Login Endpoint**
+   ```bash
+   curl -X POST http://localhost/backend/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"student_id":"2024-00001","password":"password123"}'
+   ```
+
+### Default Test Accounts
+
+The schema includes sample student accounts:
+
+| Student ID | Password | Name | Course |
+|------------|----------|------|--------|
+| `2024-00001` | `password123` | Juan Dela Cruz | BSIT |
+| `2021-05289` | `password123` | Anas Mohammad Demonteverde | BSIT |
+| `2021-00700` | `password123` | Sophia Tolosa | BSIT |
+
+
+### API Request Examples
+
+**Login:**
+```bash
+POST http://localhost/backend/auth/login
+Content-Type: application/json
+
+{
+  "student_id": "2024-00001",
+  "password": "password123"
+}
+```
+
+**Get Grades (Authenticated):**
+```bash
+GET http://localhost/backend/grades
+Authorization: Bearer <your_token_here>
+```
+
+**Get Subject Details:**
+```bash
+GET http://localhost/backend/subjects/3
+Authorization: Bearer <your_token_here>
+```
+
+### Common Issues & Solutions
+
+**Issue: 404 Not Found**
+- Check if `.htaccess` is in the backend folder
+- Ensure Apache `mod_rewrite` is enabled
+- Verify backend is in correct path: `C:\xampp\htdocs\backend\`
+
+**Issue: CORS Error**
+- The backend includes CORS headers by default
+- Check `index.php` for CORS configuration
+
+**Issue: Database Connection Failed**
+- Verify MySQL is running in XAMPP
+- Check credentials in `config/database.php`
+- Ensure database `wmsu_grading` exists
+
+**Issue: Token Invalid**
+- Check JWT_SECRET in `config/config.php`
+- Token may have expired (default: 1 hour)
+- Use refresh token endpoint to get new access token
+
+### Finding Your Local IP
+
+**Windows:**
+```bash
+ipconfig
+# Look for "IPv4 Address" under your network adapter
+```
+
+**Mac/Linux:**
+```bash
+ifconfig
+# Look for "inet" under your network adapter
+```
+
+Example: `192.168.1.100` → Use `http://192.168.1.100/backend` in app config
 
 ---
 
@@ -226,16 +403,7 @@ The app expects a vanilla PHP REST API with the following characteristics:
 | `/notifications` | GET | Notifications list |
 | `/notifications/{id}/read` | PUT | Mark as read |
 
-### API Response Format
 
-```typescript
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  errors?: Record<string, string[]>;
-}
-```
 
 ### Authentication Flow
 
@@ -298,50 +466,10 @@ interface ApiResponse<T> {
 - [x] Profile screen
 - [x] Settings screen with theme toggle
 
----
-
-## ⏳ Pending Tasks
-
-- [ ] Connect to actual PHP backend
-- [ ] Implement push notifications
-- [ ] Add biometric authentication
-- [ ] Create onboarding flow
-- [ ] Add offline data caching
-- [ ] Implement pull-to-refresh
-- [ ] Add grade calculation utilities
-- [ ] Create semester comparison charts
-- [ ] Add export functionality (PDF transcripts)
-- [ ] Write unit tests
-- [ ] Add E2E tests with Detox
 
 ---
 
-## 🛠️ Development Scripts
 
-```bash
-# Start development server
-npx expo start
-
-# Start with cache cleared
-npx expo start --clear
-
-# Run on Android
-npx expo run:android
-
-# Run on iOS
-npx expo run:ios
-
-# Build for production (EAS)
-eas build --platform all
-
-# Type checking
-npx tsc --noEmit
-
-# Lint code
-npm run lint
-```
-
----
 
 ## 📦 Key Dependencies
 
@@ -364,18 +492,13 @@ npm run lint
 
 ## 📄 License
 
-This project is proprietary software developed for Western Mindanao State University.
+This project is proprietary software developed for partial fulfillment of requirements in the App. Dev. and Emerging Tech. subject taught by Sir Saavedra, College of Computing Studies, Western Mindanao State University.
 
 ---
 
 ## 👥 Contributors
 
-- WMSU IT Development Team
+- Demonteverde, Anas Mohammad E. (BSIT 3C)
+- Tolosa, Sophia E. (BSIT 3C)
 
 ---
-
-## 📞 Support
-
-For technical support or inquiries:
-- Email: it-support@wmsu.edu.ph
-- Website: https://wmsu.edu.ph

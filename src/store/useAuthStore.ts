@@ -73,7 +73,39 @@ export const useAuthStore = create<AuthStore>()(
           
           if (response.success && response.data) {
             // PHP backend returns: { user, accessToken, refreshToken, expiresIn }
-            const { user, accessToken, refreshToken } = response.data as any;
+            const { user: rawUser, accessToken, refreshToken } = response.data as any;
+            
+            console.log('🔍 Raw user from backend:', JSON.stringify(rawUser, null, 2));
+            
+            // Construct fullName if not provided
+            const firstName = rawUser.first_name || rawUser.firstName || '';
+            const middleName = rawUser.middle_name || rawUser.middleName || '';
+            const lastName = rawUser.last_name || rawUser.lastName || '';
+            const fullName = rawUser.fullName || 
+              `${firstName} ${middleName} ${lastName}`.trim().replace(/\s+/g, ' ');
+            
+            // Normalize user data from snake_case to camelCase
+            const user: User = {
+              id: rawUser.id?.toString() || '',
+              studentId: rawUser.student_id || rawUser.studentId || '',
+              email: rawUser.email || '',
+              firstName: firstName,
+              lastName: lastName,
+              middleName: middleName,
+              fullName: fullName,
+              program: rawUser.program,
+              programCode: rawUser.program_code || rawUser.programCode,
+              department: rawUser.department,
+              college: rawUser.college,
+              yearLevel: rawUser.year_level || rawUser.yearLevel,
+              section: rawUser.section,
+              status: rawUser.status || 'active',
+              enrollmentDate: rawUser.enrollment_date || rawUser.enrollmentDate,
+              createdAt: rawUser.created_at || rawUser.createdAt,
+              updatedAt: rawUser.updated_at || rawUser.updatedAt,
+            };
+            
+            console.log('✅ Normalized user:', JSON.stringify(user, null, 2));
             
             const tokens = {
               accessToken,

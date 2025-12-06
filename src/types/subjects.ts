@@ -8,25 +8,26 @@ export interface Subject {
   name: string;
   description?: string;
   units: number;
-  lectureHours: number;
-  labHours: number;
-  instructor: Instructor;
-  schedule: Schedule[];
-  room: string;
-  semesterId: string;
-  semesterName: string;
-  academicYear: string;
-  status: 'enrolled' | 'completed' | 'dropped' | 'failed';
-  createdAt: string;
-  updatedAt: string;
+  lectureHours?: number;
+  labHours?: number;
+  instructor?: Instructor;
+  schedule?: Schedule[];
+  schedules?: Schedule[]; // Backend returns 'schedules'
+  room?: string;
+  semesterId?: string;
+  semesterName?: string;
+  academicYear?: string;
+  status?: 'enrolled' | 'completed' | 'dropped' | 'failed';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SubjectDetails extends Subject {
   syllabus?: string;
-  prerequisites: string[];
-  corequisites: string[];
-  classSize: number;
-  enrolledCount: number;
+  prerequisites?: string[];
+  corequisites?: string[];
+  classSize?: number;
+  enrolledCount?: number;
 }
 
 export interface Instructor {
@@ -39,12 +40,14 @@ export interface Instructor {
 }
 
 export interface Schedule {
-  id: string;
-  dayOfWeek: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
-  startTime: string; // HH:mm format
-  endTime: string; // HH:mm format
-  room: string;
-  type: 'lecture' | 'laboratory' | 'tutorial';
+  id?: string;
+  day?: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday'; // Backend uses 'day'
+  dayOfWeek?: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday'; // Alternative field name
+  startTime?: string; // HH:mm format or TIME from backend
+  endTime?: string; // HH:mm format or TIME from backend
+  time?: string; // Combined time string (alternative format)
+  room?: string;
+  type?: 'Lecture' | 'Laboratory' | 'Tutorial' | 'lecture' | 'laboratory' | 'tutorial'; // Backend uses capitalized
 }
 
 export interface Semester {

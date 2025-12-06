@@ -3,12 +3,14 @@
  * Shows detailed information about a specific subject
  */
 
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { Layout } from '../../../src/constants/Layout';
+import { subjectsApi } from '../../../src/services/api';
+import type { SubjectDetails } from '../../../src/types/subjects';
 import {
   ThemedView,
   ThemedText,
@@ -17,35 +19,56 @@ import {
   Header,
 } from '../../../src/components/ui';
 
-// Mock subject details
-const mockSubjectDetails = {
-  id: '1',
-  code: 'CS 201',
-  name: 'Data Structures and Algorithms',
-  description: 'This course covers fundamental data structures such as arrays, linked lists, stacks, queues, trees, and graphs. Students will learn algorithm analysis and design techniques including sorting, searching, and graph algorithms.',
-  units: 3,
-  lectureHours: 2,
-  labHours: 3,
-  instructor: {
-    name: 'Dr. Juan Dela Cruz',
-    email: 'juan.delacruz@wmsu.edu.ph',
-    department: 'Computer Science Department',
-    office: 'CCS Building, Room 301',
-    consultationHours: 'MWF 2:00 PM - 4:00 PM',
-  },
-  schedule: [
-    { day: 'Monday', time: '8:00 AM - 9:30 AM', room: 'CL-301', type: 'Lecture' },
-    { day: 'Wednesday', time: '8:00 AM - 9:30 AM', room: 'CL-301', type: 'Lecture' },
-    { day: 'Friday', time: '8:00 AM - 11:00 AM', room: 'CL-Lab1', type: 'Laboratory' },
-  ],
-  prerequisites: ['CS 101 - Introduction to Programming', 'MATH 101 - Calculus I'],
-  classSize: 42,
-  enrolledCount: 38,
-};
-
 export default function SubjectDetailScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [subject, setSubject] = useState<SubjectDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSubjectDetails = async () => {
+      try {
+        setIsLoading(true);
+        const response = await subjectsApi.getById(id);
+        if (response.success && response.data) {
+          setSubject(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch subject details:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchSubjectDetails();
+    }
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        <Header title="Subject Details" showBack />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </ThemedView>
+    );
+  }
+
+  if (!subject) {
+    return (
+      <ThemedView style={styles.container}>
+        <Header title="Subject Details" showBack />
+        <View style={styles.emptyContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color={colors.textSecondary} />
+          <ThemedText variant="headline" style={{ color: colors.textSecondary, marginTop: 16 }}>
+            Subject not found
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -63,13 +86,13 @@ export default function SubjectDetailScreen() {
         {/* Subject Header Card */}
         <Card variant="elevated" style={styles.headerCard}>
           <View style={styles.subjectHeader}>
-            <Badge label={mockSubjectDetails.code} variant="primary" />
+            <Badge label={subject.code} variant="primary" />
             <ThemedText variant="title2" style={styles.subjectName}>
-              {mockSubjectDetails.name}
+              {subject.name}
             </ThemedText>
             <View style={styles.unitsBadge}>
               <ThemedText variant="subheadline" color="secondary">
-                {mockSubjectDetails.units} units ({mockSubjectDetails.lectureHours} lec, {mockSubjectDetails.labHours} lab)
+                {subject.units} units {subject.lectureHours && subject.labHours ? `(${subject.lectureHours} lec, ${subject.labHours} lab)` : ''}
               </ThemedText>
             </View>
           </View>
@@ -79,66 +102,77 @@ export default function SubjectDetailScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Ionicons name="people-outline" size={20} color={colors.primary} />
-              <ThemedText variant="headline">{mockSubjectDetails.enrolledCount}</ThemedText>
+              <ThemedText variant="headline">{subject.enrolledCount || 0}</ThemedText>
               <ThemedText variant="caption2" color="secondary">Enrolled</ThemedText>
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.divider }]} />
             <View style={styles.statItem}>
               <Ionicons name="resize-outline" size={20} color={colors.primary} />
-              <ThemedText variant="headline">{mockSubjectDetails.classSize}</ThemedText>
+              <ThemedText variant="headline">{subject.classSize || 0}</ThemedText>
               <ThemedText variant="caption2" color="secondary">Capacity</ThemedText>
             </View>
           </View>
         </Card>
 
         {/* Description */}
-        <View style={styles.section}>
-          <ThemedText variant="title3" style={styles.sectionTitle}>
-            Description
-          </ThemedText>
-          <Card variant="elevated" padding="md">
-            <ThemedText variant="body" color="secondary" style={styles.description}>
-              {mockSubjectDetails.description}
+        {subject.description && (
+          <View style={styles.section}>
+            <ThemedText variant="title3" style={styles.sectionTitle}>
+              Description
             </ThemedText>
-          </Card>
-        </View>
+            <Card variant="elevated" padding="md">
+              <ThemedText variant="body" color="secondary" style={styles.description}>
+                {subject.description}
+              </ThemedText>
+            </Card>
+          </View>
+        )}
 
         {/* Schedule */}
-        <View style={styles.section}>
-          <ThemedText variant="title3" style={styles.sectionTitle}>
-            Schedule
-          </ThemedText>
-          <Card variant="elevated">
-            {mockSubjectDetails.schedule.map((sched, index) => (
+        {(() => {
+          const schedules = subject.schedules || subject.schedule || [];
+          return schedules.length > 0 && (
+          <View style={styles.section}>
+            <ThemedText variant="title3" style={styles.sectionTitle}>
+              Schedule
+            </ThemedText>
+            <Card variant="elevated">
+              {schedules.map((sched: any, index: number) => (
               <View key={index}>
                 <View style={styles.scheduleRow}>
                   <View style={[styles.dayBadge, { backgroundColor: colors.primaryMuted }]}>
                     <ThemedText variant="caption1" color="accent" weight="semibold">
-                      {sched.day.substring(0, 3).toUpperCase()}
+                      {(sched.dayOfWeek || sched.day || '').substring(0, 3).toUpperCase()}
                     </ThemedText>
                   </View>
                   <View style={styles.scheduleInfo}>
-                    <ThemedText variant="headline">{sched.time}</ThemedText>
+                    <ThemedText variant="headline">
+                      {sched.time || `${sched.startTime || ''} - ${sched.endTime || ''}`}
+                    </ThemedText>
                     <View style={styles.scheduleDetails}>
                       <Ionicons name="location-outline" size={14} color={colors.textTertiary} />
                       <ThemedText variant="caption1" color="secondary">
-                        {sched.room}
+                        {sched.room || 'TBA'}
                       </ThemedText>
+                      {sched.type && (
                       <Badge
                         label={sched.type}
                         variant={sched.type === 'Laboratory' ? 'info' : 'secondary'}
                         size="sm"
                       />
+                      )}
                     </View>
                   </View>
                 </View>
-                {index !== mockSubjectDetails.schedule.length - 1 && (
+                {index !== schedules.length - 1 && (
                   <View style={[styles.scheduleDivider, { backgroundColor: colors.divider }]} />
                 )}
               </View>
             ))}
           </Card>
         </View>
+          );
+        })()}
 
         {/* Instructor */}
         <View style={styles.section}>
@@ -151,9 +185,9 @@ export default function SubjectDetailScreen() {
                 <Ionicons name="person" size={28} color={colors.primary} />
               </View>
               <View style={styles.instructorInfo}>
-                <ThemedText variant="headline">{mockSubjectDetails.instructor.name}</ThemedText>
-                <ThemedText variant="caption1" color="secondary">
-                  {mockSubjectDetails.instructor.department}
+                <ThemedText variant="headline">{subject.instructor?.name || 'TBA'}</ThemedText>
+                <ThemedText variant="subheadline" color="secondary">
+                  {subject.instructor?.department || 'Department'}
                 </ThemedText>
               </View>
             </View>
@@ -164,46 +198,50 @@ export default function SubjectDetailScreen() {
               <View style={styles.contactRow}>
                 <Ionicons name="mail-outline" size={18} color={colors.textTertiary} />
                 <ThemedText variant="subheadline" color="secondary">
-                  {mockSubjectDetails.instructor.email}
+                  {subject.instructor?.email || 'N/A'}
                 </ThemedText>
               </View>
               <View style={styles.contactRow}>
                 <Ionicons name="location-outline" size={18} color={colors.textTertiary} />
                 <ThemedText variant="subheadline" color="secondary">
-                  {mockSubjectDetails.instructor.office}
+                  {subject.instructor?.title || 'Faculty Office'}
                 </ThemedText>
               </View>
-              <View style={styles.contactRow}>
-                <Ionicons name="time-outline" size={18} color={colors.textTertiary} />
-                <ThemedText variant="subheadline" color="secondary">
-                  {mockSubjectDetails.instructor.consultationHours}
-                </ThemedText>
-              </View>
+              {subject.instructor?.email && (
+                <View style={styles.contactRow}>
+                  <Ionicons name="time-outline" size={18} color={colors.textTertiary} />
+                  <ThemedText variant="subheadline" color="secondary">
+                    Consultation Hours
+                  </ThemedText>
+                </View>
+              )}
             </View>
           </Card>
         </View>
 
         {/* Prerequisites */}
-        <View style={styles.section}>
-          <ThemedText variant="title3" style={styles.sectionTitle}>
-            Prerequisites
-          </ThemedText>
-          <Card variant="elevated">
-            {mockSubjectDetails.prerequisites.map((prereq, index) => (
-              <View key={index}>
-                <View style={styles.prereqRow}>
-                  <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-                  <ThemedText variant="body" style={styles.prereqText}>
-                    {prereq}
-                  </ThemedText>
+        {subject.prerequisites && subject.prerequisites.length > 0 && (
+          <View style={styles.section}>
+            <ThemedText variant="title3" style={styles.sectionTitle}>
+              Prerequisites
+            </ThemedText>
+            <Card variant="elevated">
+              {subject.prerequisites.map((prereq: string, index: number) => (
+                <View key={index}>
+                  <View style={styles.prereqRow}>
+                    <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+                    <ThemedText variant="body" style={styles.prereqText}>
+                      {prereq}
+                    </ThemedText>
+                  </View>
+                  {index !== (subject.prerequisites?.length ?? 0) - 1 && (
+                    <View style={[styles.prereqDivider, { backgroundColor: colors.divider }]} />
+                  )}
                 </View>
-                {index !== mockSubjectDetails.prerequisites.length - 1 && (
-                  <View style={[styles.prereqDivider, { backgroundColor: colors.divider }]} />
-                )}
-              </View>
-            ))}
-          </Card>
-        </View>
+              ))}
+            </Card>
+          </View>
+        )}
 
         <View style={{ height: Layout.spacing.xl }} />
       </ScrollView>
@@ -214,6 +252,17 @@ export default function SubjectDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
   },
   scrollView: {
     flex: 1,
