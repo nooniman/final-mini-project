@@ -16,20 +16,20 @@ A modern React Native Expo application for Western Mindanao State University's s
 - **Profile & Settings** - User profile management and app preferences
 
 ### UI/UX Features
-- 🎨 **WMSU Crimson Theme** - Primary color palette based on university identity
-- 🌓 **Dark/Light Mode** - Full theming system with smooth transitions
-- 📱 **Apple-Inspired Design** - Modern, clean interface following iOS design patterns
-- ♿ **Accessible Components** - Built with accessibility in mind
+-  **WMSU Crimson Theme** - Primary color palette based on university identity
+-  **Dark/Light Mode** - Full theming system with smooth transitions
+-  **Apple-Inspired Design** - Modern, clean interface following iOS design patterns
+-  **Accessible Components** - Built with accessibility in mind
 
 ### Technical Features
-- 🔐 **Secure Authentication** - Token-based auth with secure storage
-- 📡 **REST API Integration** - Ready for vanilla PHP backend connection
-- 💾 **Persistent State** - Zustand with AsyncStorage persistence
-- 🧭 **File-based Routing** - Expo Router for intuitive navigation
+-  **Secure Authentication** - Token-based auth with secure storage
+-  **REST API Integration** - Ready for vanilla PHP backend connection
+-  **Persistent State** - Zustand with AsyncStorage persistence
+-  **File-based Routing** - Expo Router for intuitive navigation
 
 ---
 
-## 📂 Folder Structure
+##  Folder Structure
 
 ```
 grading-system-app/
@@ -206,7 +206,7 @@ export const API_CONFIG = {
 
 ---
 
-## 🔧 Backend Usage Guide
+## Backend Usage Guide
 
 ### Database Setup
 
@@ -341,7 +341,7 @@ Example: `192.168.1.100` → Use `http://192.168.1.100/backend` in app config
 
 ---
 
-## 🎨 Theming System
+##  Theming System
 
 ### WMSU Color Palette
 
@@ -372,7 +372,7 @@ function MyComponent() {
 
 ---
 
-## 📡 API Integration
+## API Integration
 
 ### Backend Requirements
 
@@ -414,7 +414,7 @@ The app expects a vanilla PHP REST API with the following characteristics:
 
 ---
 
-## 🧩 Component Library
+## Component Library
 
 ### Available Components
 
@@ -440,7 +440,7 @@ The app expects a vanilla PHP REST API with the following characteristics:
 
 ---
 
-## 📋 Features Completed
+## Features Completed
 
 - [x] Project initialization with Expo SDK 54
 - [x] TypeScript configuration
@@ -470,7 +470,7 @@ The app expects a vanilla PHP REST API with the following characteristics:
 
 
 
-## 📦 Key Dependencies
+## Key Dependencies
 
 | Package | Version | Purpose |
 |---------|---------|---------|
@@ -489,13 +489,13 @@ The app expects a vanilla PHP REST API with the following characteristics:
 
 ---
 
-## 📄 License
+## License
 
 This project is proprietary software developed for partial fulfillment of requirements in the App. Dev. and Emerging Tech. subject taught by Sir Saavedra, College of Computing Studies, Western Mindanao State University.
 
 ---
 
-## 👥 Contributors
+## Contributors
 
 - Demonteverde, Anas Mohammad E. (BSIT 3C)
 - Tolosa, Sophia E. (BSIT 3C)
